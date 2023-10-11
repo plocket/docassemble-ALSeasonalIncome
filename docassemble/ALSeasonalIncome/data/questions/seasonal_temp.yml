@@ -1,0 +1,105 @@
+---
+include:
+  - al_income.yml
+---
+objects:
+  - jobs: ALItemizedJobList.using(complete_attribute='complete', ask_number=True)
+---
+id: interview order
+mandatory: True
+code: |
+  jobs.target_number = 1
+  jobs.gather()
+  summary
+---
+code: |
+  jobs[i].source = 'a job'
+  if jobs[i].is_seasonal:
+    jobs[i].months.complete_attribute = "complete"
+    jobs[i].months.gather()
+    jobs[i].complete = True
+---
+#generic object: ALItemizedJob
+#code: |
+#  x.months[i].gather()
+#  x.months[i].complete = True
+---
+generic object: ALItemizedJob
+# Can't gather .to_add and .to_subtract separately for some reason
+code: |
+  x.months[i].to_add.there_are_any = True
+  x.months[i].to_add['income'].value
+  x.months[i].to_add.gathered = True
+  x.months[i].to_subtract['deductions'].value
+  x.months[i].to_subtract.gathered = True
+  x.months[i].complete = True
+---
+#generic object: ALItemizedJob
+#code: |
+#  #x.months[i].to_add.gather()  # Triggers .new_item_name
+#  x.months[i].to_add['income'].value
+#  #x.months[i].to_subtract.gather()  # Triggers .new_item_name
+#  x.months[i].to_subtract['income'].value
+#  x.months[i].complete = True
+#---
+#generic object: ALItemizedJob
+#code: |
+#  x.months[i].to_add['income'].value
+#  x.months[i].to_subtract['income'].value
+#  x.months[i].complete = True
+#---
+## These don't get triggered by .gather() for some reason
+##generic object: ALItemizedJob
+##code: |
+##  x.months[i].to_add['income'].value
+##  x.months[i].to_add.complete = True
+##---
+##generic object: ALItemizedJob
+##code: |
+##  x.months[i].to_subtract['income'].value
+##  x.months[i].to_subtract.complete = True
+---
+id: is job seasonal
+question: Is your job seasonal?
+fields:
+  - Is it seasonal?: jobs[i].is_seasonal
+    datatype: yesnoradio
+---
+generic object: ALItemizedJobList
+question: Months
+fields:
+  - January: x[0].to_add['income'].value
+  - Deductions: x[0].to_subtract['deductions'].value
+  - February: x[1].to_add['income'].value
+  - Deductions: x[1].to_subtract['deductions'].value
+  - March: x[2].to_add['income'].value
+  - Deductions: x[2].to_subtract['deductions'].value
+  - April: x[3].to_add['income'].value
+  - Deductions: x[3].to_subtract['deductions'].value
+  - May: x[4].to_add['income'].value
+  - Deductions: x[4].to_subtract['deductions'].value
+  - June: x[5].to_add['income'].value
+  - Deductions: x[5].to_subtract['deductions'].value
+  - July: x[6].to_add['income'].value
+  - Deductions: x[6].to_subtract['deductions'].value
+  - August: x[7].to_add['income'].value
+  - Deductions: x[7].to_subtract['deductions'].value
+  - September: x[8].to_add['income'].value
+  - Deductions: x[8].to_subtract['deductions'].value
+  - Oct: x[9].to_add['income'].value
+  - Deductions: x[9].to_subtract['deductions'].value
+  - Nov: x[10].to_add['income'].value
+  - Deductions: x[10].to_subtract['deductions'].value
+  - Dec: x[11].to_add['income'].value
+  - Deductions: x[11].to_subtract['deductions'].value
+---
+event: summary
+id: summary
+question: Summary
+subquestion: |
+  Your jobs:
+  
+  % for job in jobs:
+  * ${job.source}: ${job.total()}
+  % endfor
+---

@@ -1,0 +1,1 @@
+Experiment with how to implement seasonal income classes. Avoid including 3 parts date.
