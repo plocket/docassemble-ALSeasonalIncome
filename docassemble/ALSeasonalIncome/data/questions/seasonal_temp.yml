@@ -1,4 +1,53 @@
 ---
+comment: |
+
+  2023/11/28
+  M: Paper prototypes needed?
+  C: Easy digital demo
+    List of months. When check off a month, show if to show questions about how many times they got paid that month.
+  
+  User M1: Monthly for income, but yearly for deductions
+  
+  User C1:
+    Changing income over the year.
+    W2, 1099, neither?
+    neither: how many times did you get paid in these months
+    "do you want to enter in by paystub?" - may need user testing for that, because C feels it may be confusing
+    
+  Need a couple of demos
+    1. Which months did you get paid in? How many times did you get paid that month? (Would people who just get paid once per month find this very annoying?)
+    2. Do you want to enter the amounts in by month, pay stub, ...?
+    
+  Output for VT:
+    - State taxes per month summed for all jobs
+    - Federal taxes per month summed for all jobs
+    
+  Months listed in order of most recent months? Confusing? Could we say the year next to the month?
+    - Oct 2023
+    - Sept 2023
+    ...
+    - December 2022
+    - November 2022
+  
+  How do separate money out:
+    interval.to_subtract["deductions"]
+    interval.to_subtract["expenses"]
+    
+  "How much did you spend this month to keep this job?"
+    Sometimes people want yearly, but VT needs month
+    
+  Federal tax taken out
+  Soc Sec taken out
+  FICA/Medicare
+  State tax
+  Health insurance
+  Other deductions – show more checkbox options including gear
+    C: Employer can take gear expenses out of your paycheck. It might be an expense for court purposes (not sure about taxes). I would assume we should subtract that from net income.
+    M: but if I were to say how much I get paid, wouldn't I say "$175" because the $25 were taken out already when I get my check?
+    C: But we want the $200, not the $175. Pay per hour can be affected by this.
+    M: 1. Does your employer take money out of your paycheck? 2. How much do you actually get before (will they know after better? we may have to be much more emphatic about wording about "before" if that's the case.) your employer takes the money out? How much does your employer take out? (That still seems confusing)
+    C: Maybe we give an example of gross pay.
+---
 include:
   - al_income.yml
 ---
@@ -13,51 +62,74 @@ code: |
   summary
 ---
 code: |
-  jobs[i].source = 'a job'
+  jobs[i].source = 'site admin'
   if jobs[i].is_seasonal:
-    jobs[i].months.complete_attribute = "complete"
-    jobs[i].months.gather()
+    jobs[i].intervals.complete_attribute = "complete"
+    jobs[i].intervals.source = "Monthly"
+    jobs[i].intervals.ask_number = True
+    jobs[i].intervals.target_number = 12
+    jobs[i].intervals.gather()
     jobs[i].complete = True
 ---
 #generic object: ALItemizedJob
 #code: |
-#  x.months[i].gather()
-#  x.months[i].complete = True
+#  x.intervals[i].gather()
+#  x.intervals[i].complete = True
+---
+language: en
+variable name: month_names
+data:
+  - January
+  - February
+  - March
+  - April
+  - May
+  - June
+  - July
+  - August
+  - September
+  - October
+  - November
+  - December
 ---
 generic object: ALItemizedJob
 # Can't gather .to_add and .to_subtract separately for some reason
 code: |
-  x.months[i].to_add.there_are_any = True
-  x.months[i].to_add['income'].value
-  x.months[i].to_add.gathered = True
-  x.months[i].to_subtract['deductions'].value
-  x.months[i].to_subtract.gathered = True
-  x.months[i].complete = True
+  x.intervals[i].to_add.there_are_any = True
+  x.intervals[i].to_add['income'].value
+  x.intervals[i].to_add.gathered = True
+  x.intervals[i].to_subtract['deductions'].value
+  x.intervals[i].to_subtract.gathered = True
+  x.intervals[i].complete = True
+---
+generic object: ALItemizedJob
+code: |
+  x.intervals[i].source = month_names[i]
 ---
 #generic object: ALItemizedJob
 #code: |
-#  #x.months[i].to_add.gather()  # Triggers .new_item_name
-#  x.months[i].to_add['income'].value
-#  #x.months[i].to_subtract.gather()  # Triggers .new_item_name
-#  x.months[i].to_subtract['income'].value
-#  x.months[i].complete = True
+#  #x.intervals[i].to_add.gather()  # Triggers .new_item_name
+#  x.intervals[i].to_add['income'].value
+#  #x.intervals[i].to_subtract.gather()  # Triggers .new_item_name
+#  x.intervals[i].to_subtract['income'].value
+#  x.intervals[i].complete = True
 #---
 #generic object: ALItemizedJob
 #code: |
-#  x.months[i].to_add['income'].value
-#  x.months[i].to_subtract['income'].value
-#  x.months[i].complete = True
+#  x.intervals[i].to_add['income'].value
+#  x.intervals[i].to_subtract['income'].value
+#  x.intervals[i].complete = True
 #---
 ## These don't get triggered by .gather() for some reason
 ##generic object: ALItemizedJob
 ##code: |
-##  x.months[i].to_add['income'].value
-##  x.months[i].to_add.complete = True
+##  x.intervals[i].to_add['income'].value
+##  x.intervals[i].to_add.complete = True
 ##---
 ##generic object: ALItemizedJob
 ##code: |
-##  x.months[i].to_subtract['income'].value
-##  x.months[i].to_subtract.complete = True
+##  x.intervals[i].to_subtract['income'].value
+##  x.intervals[i].to_subtract.complete = True
 ---
 id: is job seasonal
 question: Is your job seasonal?
@@ -65,33 +137,39 @@ fields:
   - Is it seasonal?: jobs[i].is_seasonal
     datatype: yesnoradio
 ---
-generic object: ALItemizedJobList
-question: Months
+# We are __% sure that this is the flow we want
+id: Which months
+question: Which months did you get paid in?
 fields:
-  - January: x[0].to_add['income'].value
-  - Deductions: x[0].to_subtract['deductions'].value
-  - February: x[1].to_add['income'].value
-  - Deductions: x[1].to_subtract['deductions'].value
-  - March: x[2].to_add['income'].value
-  - Deductions: x[2].to_subtract['deductions'].value
-  - April: x[3].to_add['income'].value
-  - Deductions: x[3].to_subtract['deductions'].value
-  - May: x[4].to_add['income'].value
-  - Deductions: x[4].to_subtract['deductions'].value
-  - June: x[5].to_add['income'].value
-  - Deductions: x[5].to_subtract['deductions'].value
-  - July: x[6].to_add['income'].value
-  - Deductions: x[6].to_subtract['deductions'].value
-  - August: x[7].to_add['income'].value
-  - Deductions: x[7].to_subtract['deductions'].value
-  - September: x[8].to_add['income'].value
-  - Deductions: x[8].to_subtract['deductions'].value
-  - Oct: x[9].to_add['income'].value
-  - Deductions: x[9].to_subtract['deductions'].value
-  - Nov: x[10].to_add['income'].value
-  - Deductions: x[10].to_subtract['deductions'].value
-  - Dec: x[11].to_add['income'].value
-  - Deductions: x[11].to_subtract['deductions'].value
+  - no label: jobs[i].which_months
+    datatype: checkbox
+    choices:
+      - January: 0
+      - February: 1
+      - March: 2
+      - April: 3
+      - May: 4
+      - June: 5
+      - July: 6
+      - August: 7
+      - September: 8
+      - Oct: 9
+      - Nov: 10
+      - Dec: 11
+---
+# TODO
+id: How many times per this month?
+question: |
+  How many times were you paid in ${ jobs[i].which_months.true_values()[j] }?
+fields:
+  - no label: jobs[i].pay_periods_per_specific_month[j]
+    datatype: number
+---
+generic object: ALItemizedJobList
+question: intervals
+fields:
+  - January: x[0].to_add["income"].value
+  - Deductions: x[0].to_subtract["deductions"].value
 ---
 event: summary
 id: summary
@@ -100,6 +178,18 @@ subquestion: |
   Your jobs:
   
   % for job in jobs:
-  * ${job.source}: ${job.total()}
+  #### ${ capitalize( job.source ) }[BR]
+  gross: ${ job.total() }[BR]
+  deductions: ${ job.deduction_total() }[BR]
+  net: ${ job.net_total() }
+  
+  **${ capitalize(job.intervals.source) }**:
+  % for interval in job.intervals:
+  
+  **${ interval.source }**:
+  
+  * Income: ${ currency( interval.to_add.total() ) }
+  * Deductions: ${ currency( interval.to_subtract.total() ) }
+  % endfor
   % endfor
 ---
